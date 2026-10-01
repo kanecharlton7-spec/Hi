@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mac Screen Simulator</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Arial,sans-serif}
+body{background:#111;color:#fff}
+#desktop{position:relative;width:100%;height:100%;background:linear-gradient(135deg,#172238,#42365b 48%,#171b2b);overflow:hidden}
+#desktop:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 25% 25%,rgba(255,255,255,.12),transparent 30%),radial-gradient(circle at 80% 75%,rgba(77,170,255,.14),transparent 35%)}
+#menubar{position:absolute;z-index:1000;top:0;left:0;right:0;height:30px;padding:0 12px;display:flex;align-items:center;gap:17px;background:rgba(25,25,28,.72);backdrop-filter:blur(18px);font-size:13px}
+#menubar .apple{font-size:18px;line-height:1}.menuitem{cursor:pointer}.spacer{flex:1}
+#clock{min-width:90px;text-align:right}
+#dock{position:absolute;z-index:900;bottom:12px;left:50%;transform:translateX(-50%);height:72px;padding:8px 12px;display:flex;align-items:center;gap:10px;border:1px solid rgba(255,255,255,.18);border-radius:20px;background:rgba(40,40,45,.58);backdrop-filter:blur(22px);box-shadow:0 10px 40px #0006}
+.appicon{width:54px;height:54px;border-radius:14px;border:0;color:white;font-size:26px;display:grid;place-items:center;cursor:pointer;transition:.15s;box-shadow:0 3px 10px #0004}
+.appicon:hover{transform:translateY(-8px) scale(1.06)}
+.finder{background:linear-gradient(#e9f2ff,#8eb6e7);color:#1760a8}.notes{background:#ffe76b;color:#222}.calc{background:#444}.trash{background:#777}
+.window{position:absolute;z-index:20;left:20%;top:15%;width:58%;height:58%;min-width:360px;min-height:250px;background:rgba(245,245,247,.96);color:#222;border-radius:13px;overflow:hidden;box-shadow:0 25px 70px #0008;border:1px solid #fff8}
+.titlebar{height:42px;background:rgba(235,235,238,.95);display:flex;align-items:center;padding:0 14px;gap:8px;cursor:grab;user-select:none}
+.titlebar:active{cursor:grabbing}.traffic{display:flex;gap:7px}.dot{width:13px;height:13px;border-radius:50%;cursor:pointer}.red{background:#ff5f57}.yellow{background:#febc2e}.green{background:#28c840}
+.title{text-align:center;flex:1;font-size:13px;font-weight:600;color:#555;margin-right:54px}
+.content{height:calc(100% - 42px);padding:22px;overflow:auto}
+.hidden{display:none!important}
+#finderContent{display:flex;height:100%;padding:0}
+.sidebar{width:150px;background:#eeeef1;padding:15px;font-size:13px}.sidebar div{padding:8px;border-radius:7px}.sidebar div:hover{background:#ddd}
+.files{padding:22px;flex:1}.file{display:inline-flex;flex-direction:column;align-items:center;width:90px;margin:8px;cursor:pointer}.file span:first-child{font-size:38px}
+#notesArea{width:100%;height:100%;border:0;outline:0;background:#fffdf0;font-size:17px;padding:15px;resize:none}
+#calcDisplay{width:100%;height:55px;background:#222;color:white;border:0;border-radius:8px;text-align:right;padding:10px;font-size:25px;margin-bottom:12px}
+.calcgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.calcgrid button{height:48px;border:0;border-radius:10px;background:#ddd;font-size:17px;cursor:pointer}.calcgrid button:hover{background:#ccc}
+#welcome{position:absolute;z-index:2;top:48%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;text-shadow:0 3px 15px #0008}.welcomeTitle{font-size:42px;font-weight:700}.welcomeSub{font-size:15px;opacity:.8}
+#toast{position:absolute;z-index:2000;left:50%;top:50px;transform:translateX(-50%);padding:10px 16px;border-radius:12px;background:#222d;color:#fff;opacity:0;transition:.2s;pointer-events:none}
+@media(max-width:700px){#menubar .menuitem:not(.keep){display:none}.window{left:5%;top:12%;width:90%;height:65%;min-width:0}.dock{transform:scale(.85) translateX(-59%)}}
+
+.browser{background:rgba(248,249,252,.98)}
+.browser-window{width:70%;height:68%}
+.browserbar{padding:15px 18px 10px;background:rgba(235,237,242,.96);border-bottom:1px solid #ddd}
+.searchbox{height:42px;display:flex;align-items:center;gap:9px;background:white;border:1px solid #cfd2d9;border-radius:13px;padding:0 8px 0 13px;box-shadow:0 2px 8px #0000000c}
+.searchbox span{font-size:22px;color:#777}.searchbox input{border:0;outline:0;flex:1;font-size:15px;background:transparent}
+.searchbox button{border:0;border-radius:9px;padding:9px 14px;background:#202124;color:white;cursor:pointer;font-weight:600}
+.searchhint{font-size:11px;color:#777;margin:7px 3px 0}
+.browserhome{position:relative;height:calc(100% - 95px);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;background:linear-gradient(145deg,#f8f9ff,#eef3ff 45%,#f7f2ff)}
+.glow{position:absolute;width:300px;height:300px;border-radius:50%;background:#8ab4ff44;filter:blur(70px);top:10%;left:50%;transform:translateX(-50%)}
+.browserlogo{position:relative;font-size:54px;font-weight:800;letter-spacing:-2px;background:linear-gradient(90deg,#527cff,#a85cff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.browserwelcome{position:relative;margin-top:5px;color:#555;font-size:16px}
+.quick{position:relative;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:24px}
+.quick button{border:1px solid #d7dbe5;background:#fff;padding:9px 13px;border-radius:20px;cursor:pointer;color:#333}
+.quick button:hover{background:#f0f3fa}
+
+.screenapp{background:linear-gradient(135deg,#5c6cff,#9b5cff)}
+.screen-window{width:78%;height:72%;background:#111;color:#fff}
+.screen-body{height:calc(100% - 42px);display:flex;flex-direction:column;background:#0d0e12}
+.screen-toolbar{height:54px;display:flex;align-items:center;gap:9px;padding:8px 12px;background:#17181e;border-bottom:1px solid #2b2d36}
+.screen-toolbar button{border:0;border-radius:9px;padding:9px 13px;background:#2b2e38;color:#fff;cursor:pointer;font-weight:600}
+.screen-toolbar button.primary{background:linear-gradient(135deg,#5876ff,#9a5cff)}
+.screen-status{font-size:12px;color:#aaa;margin-left:auto}
+#sharedScreen{width:100%;height:calc(100% - 54px);object-fit:contain;background:#050507}
+.screen-help{position:absolute;inset:54px 0 0;display:grid;place-items:center;text-align:center;color:#aaa;pointer-events:none}
+.screen-help strong{display:block;color:#fff;font-size:20px;margin-bottom:7px}
+</style>
+</head>
+<body>
+<div id="desktop">
+  <div id="menubar">
+    <span class="apple"></span><span class="menuitem keep">Screen</span><span class="menuitem">File</span><span class="menuitem">Edit</span><span class="menuitem">View</span><span class="menuitem">Window</span>
+    <span class="spacer"></span><span>⌁</span><span>⌁</span><span id="clock"></span>
+  </div>
+
+  <div id="welcome"><div class="welcomeTitle">Welcome</div><div class="welcomeSub">This is your interactive HTML desktop.</div></div>
+
+  <div id="dock">
+    <button class="appicon finder" title="Finder" onclick="openApp('finder')">⌁</button>
+    <button class="appicon notes" title="Notes" onclick="openApp('notes')">📝</button>
+    <button class="appicon calc" title="Calculator" onclick="openApp('calc')">⌗</button>
+    <button class="appicon browser" title="Web Search" onclick="openApp('browser')">🌐</button>
+    <button class="appicon screenapp" title="Screen Share" onclick="openApp('screenapp')">▣</button>
+    <button class="appicon trash" title="Trash" onclick="toast('Trash is empty')">♜</button>
+  </div>
+
+  <div id="finder" class="window hidden">
+    <div class="titlebar"><div class="traffic"><span class="dot red" onclick="closeApp('finder')"></span><span class="dot yellow" onclick="minimize('finder')"></span><span class="dot green" onclick="maximize('finder')"></span></div><div class="title">Finder</div></div>
+    <div id="finderContent">
+      <div class="sidebar"><b>Favorites</b><div>⌂ Home</div><div>▣ Desktop</div><div>▤ Documents</div><div>⇩ Downloads</div></div>
+      <div class="files"><h2>Desktop</h2><div class="file" onclick="toast('HTML files are available here')"><span>🌐</span><small>screen.html</small></div><div class="file" onclick="toast('This is a demo folder')"><span>📁</span><small>Projects</small></div></div>
+    </div>
+  </div>
+
+  <div id="notes" class="window hidden">
+    <div class="titlebar"><div class="traffic"><span class="dot red" onclick="closeApp('notes')"></span><span class="dot yellow" onclick="minimize('notes')"></span><span class="dot green" onclick="maximize('notes')"></span></div><div class="title">Notes</div></div>
+    <div class="content"><textarea id="notesArea" placeholder="Start typing..."></textarea></div>
+  </div>
+
+  <div id="calc" class="window hidden">
+    <div class="titlebar"><div class="traffic"><span class="dot red" onclick="closeApp('calc')"></span><span class="dot yellow" onclick="minimize('calc')"></span><span class="dot green" onclick="maximize('calc')"></span></div><div class="title">Calculator</div></div>
+    <div class="content">
+      <input id="calcDisplay" readonly>
+      <div class="calcgrid">
+        <button onclick="calcClear()">C</button><button onclick="calcAdd('/')">÷</button><button onclick="calcAdd('*')">×</button><button onclick="calcAdd('-')">−</button>
+        <button onclick="calcAdd('7')">7</button><button onclick="calcAdd('8')">8</button><button onclick="calcAdd('9')">9</button><button onclick="calcAdd('+')">+</button>
+        <button onclick="calcAdd('4')">4</button><button onclick="calcAdd('5')">5</button><button onclick="calcAdd('6')">6</button><button onclick="calcEquals()">=</button>
+        <button onclick="calcAdd('1')">1</button><button onclick="calcAdd('2')">2</button><button onclick="calcAdd('3')">3</button><button onclick="calcAdd('0')">0</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="browser" class="window hidden browser-window">
+    <div class="titlebar"><div class="traffic"><span class="dot red" onclick="closeApp('browser')"></span><span class="dot yellow" onclick="minimize('browser')"></span><span class="dot green" onclick="maximize('browser')"></span></div><div class="title">Web Search</div></div>
+    <div class="browserbar">
+      <div class="searchbox"><span>⌕</span><input id="searchInput" placeholder="Search the web..." autocomplete="off"><button onclick="doSearch()">Search</button></div>
+      <div class="searchhint">Searches open in a new tab using your normal search engine.</div>
+    </div>
+    <div class="browserhome">
+      <div class="glow"></div>
+      <div class="browserlogo">Search</div>
+      <div class="browserwelcome">What are you looking for?</div>
+      <div class="quick">
+        <button onclick="quickSearch('Roblox')">Roblox</button>
+        <button onclick="quickSearch('sports')">Sports</button>
+        <button onclick="quickSearch('HTML tutorials')">HTML tutorials</button>
+        <button onclick="quickSearch('weather')">Weather</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screenapp" class="window hidden screen-window">
+    <div class="titlebar"><div class="traffic"><span class="dot red" onclick="stopSharing();closeApp('screenapp')"></span><span class="dot yellow" onclick="minimize('screenapp')"></span><span class="dot green" onclick="maximize('screenapp')"></span></div><div class="title">Screen Share</div></div>
+    <div class="screen-body">
+      <div class="screen-toolbar">
+        <button class="primary" id="shareBtn" onclick="startSharing()">Share Screen</button>
+        <button onclick="stopSharing()">Stop</button>
+        <button onclick="toggleFullscreen()">Fullscreen</button>
+        <span class="screen-status" id="shareStatus">Not sharing</span>
+      </div>
+      <video id="sharedScreen" autoplay playsinline></video>
+      <div class="screen-help" id="screenHelp"><div><strong>Share your Mac screen</strong>Click “Share Screen” and choose the screen or window you want to display here.</div></div>
+    </div>
+  </div>
+  <div id="toast"></div>
+</div>
+
+<script>
+let z=30;
+const windows={finder:null,notes:null,calc:null};
+function openApp(id){const w=document.getElementById(id);w.classList.remove('hidden');bring(w);document.getElementById('welcome').style.display='none'}
+function closeApp(id){document.getElementById(id).classList.add('hidden')}
+function minimize(id){document.getElementById(id).classList.add('hidden')}
+function maximize(id){const w=document.getElementById(id);w.style.left='2%';w.style.top='5%';w.style.width='96%';w.style.height='88%';bring(w)}
+function bring(w){z++;w.style.zIndex=z}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity=1;clearTimeout(window.tt);window.tt=setTimeout(()=>t.style.opacity=0,1500)}
+document.querySelectorAll('.window').forEach(w=>{
+  w.addEventListener('mousedown',()=>bring(w));
+  const bar=w.querySelector('.titlebar');let dragging=false,ox=0,oy=0;
+  bar.addEventListener('mousedown',e=>{if(e.target.classList.contains('dot'))return;dragging=true;ox=e.clientX-w.offsetLeft;oy=e.clientY-w.offsetTop;bring(w)});
+  window.addEventListener('mousemove',e=>{if(!dragging)return;w.style.left=Math.max(0,e.clientX-ox)+'px';w.style.top=Math.max(30,e.clientY-oy)+'px'});
+  window.addEventListener('mouseup',()=>dragging=false);
+});
+let expr='';
+function calcAdd(x){expr+=x;document.getElementById('calcDisplay').value=expr}
+function calcClear(){expr='';document.getElementById('calcDisplay').value=''}
+function calcEquals(){try{if(!/^[0-9+\-*/. ()]+$/.test(expr))throw 0;expr=String(Function('return '+expr)());document.getElementById('calcDisplay').value=expr}catch{toast('Invalid calculation');calcClear()}}
+function tick(){document.getElementById('clock').textContent=new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}
+tick();setInterval(tick,1000);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){['finder','notes','calc'].forEach(closeApp)}});
+
+function doSearch(){
+  const q=document.getElementById('searchInput').value.trim();
+  if(!q)return;
+  window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank','noopener');
+}
+function quickSearch(q){document.getElementById('searchInput').value=q;doSearch()}
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch()});
+
+let screenStream=null;
+async function startSharing(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){
+    toast('Screen sharing is not supported in this browser'); return;
+  }
+  try{
+    screenStream=await navigator.mediaDevices.getDisplayMedia({
+      video:{cursor:'always'},
+      audio:false
+    });
+    const video=document.getElementById('sharedScreen');
+    video.srcObject=screenStream;
+    document.getElementById('screenHelp').style.display='none';
+    document.getElementById('shareStatus').textContent='Sharing';
+    document.getElementById('shareBtn').textContent='Sharing…';
+    const track=screenStream.getVideoTracks()[0];
+    track.addEventListener('ended',stopSharing);
+  }catch(e){
+    if(e.name!=='NotAllowedError') toast('Could not start screen sharing');
+  }
+}
+function stopSharing(){
+  if(screenStream){
+    screenStream.getTracks().forEach(t=>t.stop());
+    screenStream=null;
+  }
+  const video=document.getElementById('sharedScreen');
+  video.srcObject=null;
+  document.getElementById('screenHelp').style.display='grid';
+  document.getElementById('shareStatus').textContent='Not sharing';
+  document.getElementById('shareBtn').textContent='Share Screen';
+}
+async function toggleFullscreen(){
+  const el=document.getElementById('sharedScreen');
+  try{
+    if(!document.fullscreenElement) await el.requestFullscreen();
+    else await document.exitFullscreen();
+  }catch(e){toast('Fullscreen unavailable')}
+}
+</script>
+</body>
+</html>
